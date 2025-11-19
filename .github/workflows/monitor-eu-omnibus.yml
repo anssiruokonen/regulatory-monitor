@@ -56,28 +56,67 @@ jobs:
             echo "❌ Not yet released - Still monitoring" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Send email notification
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "🔔 Regulatory Monitor Report - ${{ job.status }}"
-          to: anssi.ruokonen+notification@gmail.com
-          from: ${{ secrets.EMAIL_USERNAME }}
-          body: |
-            Regulatory Monitor Run Report
-            ==============================
+      - name: Update RSS feed
+        run: |
+          python3 << 'EOF'
+          import xml.etree.ElementTree as ET
+          from datetime import datetime
+          import os
 
-            Timestamp: ${{ job.started_at }}
-            Status: ${{ job.status }}
+          # Determine if found
+          found = "${{ steps.check_digital_strategy.outputs.found }}" == "true" or "${{ steps.check_eurlex.outputs.found }}" == "true"
 
-            Digital Omnibus Status:
-            ${{ steps.check_digital_strategy.outputs.found == 'true' && '✅ Found on EU Digital Strategy Portal' || '❌ Not yet on EU Digital Strategy Portal' }}
-            ${{ steps.check_eurlex.outputs.found == 'true' && '✅ Found on EUR-Lex' || '❌ Not yet on EUR-Lex' }}
+          # Create RSS feed entry
+          timestamp = datetime.utcnow().isoformat() + 'Z'
+          status = "✅ FOUND" if found else "❌ Still monitoring"
 
-            Workflow Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          description = f"""
+          <p><strong>Status:</strong> {status}</p>
+          <p><strong>Digital Strategy Portal:</strong> {'Found' if "${{ steps.check_digital_strategy.outputs.found }}" == "true" else 'Not found'}</p>
+          <p><strong>EUR-Lex:</strong> {'Found' if "${{ steps.check_eurlex.outputs.found }}" == "true" else 'Not found'}</p>
+          <p><a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">View workflow run</a></p>
+          """
 
-            --
-            This is an automated notification from regulatory-monitor
+          # Load or create RSS feed
+          rss_file = 'feed.xml'
+          if os.path.exists(rss_file):
+            tree = ET.parse(rss_file)
+            root = tree.getroot()
+          else:
+            root = ET.Element('rss', version='2.0')
+            channel = ET.SubElement(root, 'channel')
+            ET.SubElement(channel, 'title').text = 'Regulatory Monitor - EU Digital Omnibus'
+            ET.SubElement(channel, 'link').text = 'https://github.com/${{ github.repository }}'
+            ET.SubElement(channel, 'description').text = 'Monitoring for EU Digital Omnibus updates'
+            tree = ET.ElementTree(root)
+
+          # Get channel and add new item at the beginning
+          channel = root.find('channel')
+
+          # Create new item
+          item = ET.Element('item')
+          ET.SubElement(item, 'title').text = f"Monitor Run - {status}"
+          ET.SubElement(item, 'description').text = description
+          ET.SubElement(item, 'pubDate').text = timestamp
+          ET.SubElement(item, 'link').text = f"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Insert at beginning
+          channel.insert(0, item)
+
+          # Keep only last 50 items
+          items = channel.findall('item')
+          while len(items) > 50:
+            channel.remove(items[-1])
+            items = channel.findall('item')
+
+          # Write feed
+          tree.write(rss_file, encoding='utf-8', xml_declaration=True)
+          EOF
+
+      - name: Commit RSS feed
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add feed.xml
+          git commit -m "Update RSS feed - $(date -u +'%Y-%m-%d %H:%M:%S UTC')" || echo "No changes to commit"
+          git push || echo "Nothing to push"
