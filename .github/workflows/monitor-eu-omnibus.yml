@@ -80,37 +80,23 @@ jobs:
           <p><a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">View workflow run</a></p>
           """
 
-          # Load or create RSS feed
+          # Load existing items if feed exists
           rss_file = 'feed.xml'
+          existing_items = []
           if os.path.exists(rss_file):
             tree = ET.parse(rss_file)
             root = tree.getroot()
-          else:
-            root = ET.Element('rss', version='2.0')
-            channel = ET.SubElement(root, 'channel')
-            ET.SubElement(channel, 'title').text = 'Regulatory Monitor - EU Digital Omnibus'
-            ET.SubElement(channel, 'link').text = 'https://github.com/${{ github.repository }}'
-            ET.SubElement(channel, 'description').text = 'Monitoring for EU Digital Omnibus updates'
-            tree = ET.ElementTree(root)
+            channel = root.find('channel')
+            if channel is not None:
+              existing_items = list(channel.findall('item'))
 
-          # Get channel
-          channel = root.find('channel')
-
-          # Ensure channel metadata exists (only on creation)
-          if channel.find('title') is None:
-            # Store existing items
-            items_to_restore = list(channel)
-            for item in items_to_restore:
-              channel.remove(item)
-
-            # Add metadata
-            ET.SubElement(channel, 'title').text = 'Regulatory Monitor - EU Digital Omnibus'
-            ET.SubElement(channel, 'link').text = 'https://github.com/${{ github.repository }}'
-            ET.SubElement(channel, 'description').text = 'Monitoring for EU Digital Omnibus updates'
-
-            # Restore items
-            for item in items_to_restore:
-              channel.append(item)
+          # Create fresh RSS feed structure
+          root = ET.Element('rss', version='2.0')
+          channel = ET.SubElement(root, 'channel')
+          ET.SubElement(channel, 'title').text = 'Regulatory Monitor - EU Digital Omnibus'
+          ET.SubElement(channel, 'link').text = 'https://github.com/${{ github.repository }}'
+          ET.SubElement(channel, 'description').text = 'Monitoring for EU Digital Omnibus updates'
+          tree = ET.ElementTree(root)
 
           # Create new item
           item = ET.Element('item')
@@ -119,24 +105,10 @@ jobs:
           ET.SubElement(item, 'pubDate').text = timestamp
           ET.SubElement(item, 'link').text = f"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          # Find first item position (after metadata)
-          first_item_index = None
-          for i, child in enumerate(channel):
-            if child.tag == 'item':
-              first_item_index = i
-              break
-
-          # Insert new item at the beginning of items
-          if first_item_index is not None:
-            channel.insert(first_item_index, item)
-          else:
-            channel.append(item)
-
-          # Keep only last 50 items
-          items = channel.findall('item')
-          while len(items) > 50:
-            channel.remove(items[-1])
-            items = channel.findall('item')
+          # Add new item first, then existing items (keep only last 50 total)
+          channel.append(item)
+          for existing_item in existing_items[:49]:  # Keep max 50 items (1 new + 49 existing)
+            channel.append(existing_item)
 
           # Write feed
           tree.write(rss_file, encoding='utf-8', xml_declaration=True)
