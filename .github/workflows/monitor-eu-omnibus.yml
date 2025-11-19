@@ -1,0 +1,64 @@
+name: Monitor EU Digital Omnibus
+
+on:
+  schedule:
+    # Run daily at 9 AM UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check EU Digital Strategy Portal
+        id: check_digital_strategy
+        run: |
+          curl -s "https://digital-strategy.ec.europa.eu/en/news" -o page.html
+          if grep -q "Digital Omnibus" page.html; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "source=EU Digital Strategy Portal" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check EUR-Lex for Digital Omnibus Proposals
+        id: check_eurlex
+        run: |
+          # Check EUR-Lex for recent Digital Omnibus proposals
+          curl -s "https://eur-lex.europa.eu/search.html?qId=1700000000000&scope=EUR-LEX&type=advanced&lang=en&PRO_APREQ=Digital%20Omnibus" -o eurlex.html
+          if grep -q "Digital Omnibus" eurlex.html; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "source=EUR-Lex" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create summary
+        run: |
+          echo "## Regulatory Monitor Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Last Check:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Digital Omnibus Status" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check_digital_strategy.outputs.found }}" = "true" ] || [ "${{ steps.check_eurlex.outputs.found }}" = "true" ]; then
+            echo "✅ **FOUND** - Digital Omnibus documentation detected!" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ steps.check_digital_strategy.outputs.found }}" = "true" ]; then
+              echo "- Found on: EU Digital Strategy Portal" >> $GITHUB_STEP_SUMMARY
+            fi
+            if [ "${{ steps.check_eurlex.outputs.found }}" = "true" ]; then
+              echo "- Found on: EUR-Lex" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "❌ Not yet released - Still monitoring" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Send notification if found
+        if: steps.check_digital_strategy.outputs.found == 'true' || steps.check_eurlex.outputs.found == 'true'
+        run: |
+          echo "🚨 ALERT: EU Digital Omnibus has been released!"
+          echo "Check the sources above for details"
+          # Add your notification method here (email, Slack, etc.)
