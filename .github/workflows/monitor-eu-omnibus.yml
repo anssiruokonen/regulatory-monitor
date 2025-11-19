@@ -116,10 +116,61 @@ jobs:
           tree.write(rss_file, encoding='utf-8', xml_declaration=True)
           EOF
 
-      - name: Commit RSS feed
+      - name: Create index.html
+        run: |
+          cat > index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Regulatory Monitor - EU Digital Omnibus</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+              h1 { color: #333; }
+              .status { padding: 10px; border-radius: 5px; margin: 20px 0; }
+              .status.found { background: #d4edda; color: #155724; }
+              .status.monitoring { background: #fff3cd; color: #856404; }
+              .feed-link { padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
+              .feed-link:hover { background: #0056b3; }
+              code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+            </style>
+          </head>
+          <body>
+            <h1>Regulatory Monitor</h1>
+            <p>Automated monitoring for EU regulatory releases.</p>
+
+            <h2>Current Status: EU Digital Omnibus</h2>
+            <div class="status monitoring">
+              <strong>Status:</strong> Still monitoring for official release
+            </div>
+
+            <h3>Subscribe to Updates</h3>
+            <p>Add this RSS feed to your reader to get hourly monitoring updates:</p>
+            <a href="feed.xml" class="feed-link">📡 Subscribe to RSS Feed</a>
+
+            <p>Feed URL: <code>https://anssiruokonen.github.io/regulatory-monitor/feed.xml</code></p>
+
+            <h3>How It Works</h3>
+            <ul>
+              <li>Checks EU Digital Strategy Portal hourly</li>
+              <li>Checks EUR-Lex for new proposals hourly</li>
+              <li>Updates RSS feed with results</li>
+              <li>No credentials or email setup required</li>
+            </ul>
+
+            <hr>
+            <p><small>Last updated: <span id="timestamp"></span></small></p>
+            <script>
+              document.getElementById('timestamp').textContent = new Date().toLocaleString();
+            </script>
+          </body>
+          </html>
+          EOF
+
+      - name: Commit changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add feed.xml
-          git commit -m "Update RSS feed - $(date -u +'%Y-%m-%d %H:%M:%S UTC')" || echo "No changes to commit"
+          git add feed.xml index.html .nojekyll
+          git commit -m "Update RSS feed and pages - $(date -u +'%Y-%m-%d %H:%M:%S UTC')" || echo "No changes to commit"
           git push || echo "Nothing to push"
