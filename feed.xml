@@ -1,7 +1,12 @@
 <?xml version='1.0' encoding='utf-8'?>
-<rss version="2.0"><channel><item><title>Monitor Run - ❌ Still monitoring</title><description>
+<rss version="2.0"><channel><title>Regulatory Monitor - EU Digital Omnibus</title><link>https://github.com/anssiruokonen/regulatory-monitor</link><description>Monitoring for EU Digital Omnibus updates</description><item><title>Monitor Run - ❌ Still monitoring</title><description>
+&lt;p&gt;&lt;strong&gt;Status:&lt;/strong&gt; ❌ Still monitoring&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Digital Strategy Portal:&lt;/strong&gt; Not found&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;EUR-Lex:&lt;/strong&gt; Not found&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/anssiruokonen/regulatory-monitor/actions/runs/19498828999"&gt;View workflow run&lt;/a&gt;&lt;/p&gt;
+</description><pubDate>2025-11-19T10:54:43.046622Z</pubDate><link>https://github.com/anssiruokonen/regulatory-monitor/actions/runs/19498828999</link></item><item><title>Monitor Run - ❌ Still monitoring</title><description>
 &lt;p&gt;&lt;strong&gt;Status:&lt;/strong&gt; ❌ Still monitoring&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Digital Strategy Portal:&lt;/strong&gt; Not found&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;EUR-Lex:&lt;/strong&gt; Not found&lt;/p&gt;
 &lt;p&gt;&lt;a href="https://github.com/anssiruokonen/regulatory-monitor/actions/runs/19498584717"&gt;View workflow run&lt;/a&gt;&lt;/p&gt;
-</description><pubDate>2025-11-19T10:45:53.407974Z</pubDate><link>https://github.com/anssiruokonen/regulatory-monitor/actions/runs/19498584717</link></item><title>Regulatory Monitor - EU Digital Omnibus</title><link>https://github.com/anssiruokonen/regulatory-monitor</link><description>Monitoring for EU Digital Omnibus updates</description></channel></rss>
+</description><pubDate>2025-11-19T10:45:53.407974Z</pubDate><link>https://github.com/anssiruokonen/regulatory-monitor/actions/runs/19498584717</link></item></channel></rss>
