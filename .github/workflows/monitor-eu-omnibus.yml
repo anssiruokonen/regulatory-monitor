@@ -169,6 +169,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add feed.xml index.html .nojekyll
-          git commit -m "Update RSS feed and pages - $(date -u +'%Y-%m-%d %H:%M:%S UTC')" || echo "No changes to commit"
+          git add feed.xml .nojekyll
+          git commit -m "Update RSS feed - $(date -u +'%Y-%m-%d %H:%M:%S UTC')" || echo "No changes to commit"
           git push || echo "Nothing to push"
